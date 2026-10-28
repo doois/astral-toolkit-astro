@@ -1,0 +1,49 @@
+---
+// Picks the template of an entry by its type. Types the toolkit does not know
+// get the generic one: title, then every richtext and blocks field in order.
+import Base from "../layouts/Base.astro";
+import Blocks from "../blocks/Blocks.astro";
+import Home from "./Home.astro";
+import Page from "./Page.astro";
+import Post from "./Post.astro";
+import config from "astral:config";
+import { hasRichText, type Block, type Entry } from "../lib/astral/index.ts";
+import type { Home as HomeEntry, Page as PageEntry, Post as PostEntry } from "../lib/cms.ts";
+
+type Props = { entry: Entry; locale: string; preview?: boolean };
+const { entry, locale, preview = false } = Astro.props;
+const type = config.types.find((t) => t.apiId === entry.type);
+const titleField = type?.fields.find((f) => f.type === "text")?.apiId ?? "title";
+const title = String(entry[titleField] ?? type?.name ?? entry.type);
+const sections = (type?.fields ?? []).filter((f) => f.type === "richtext" || f.type === "blocks");
+---
+
+{entry.type === "home" ? (
+  <Home entry={entry as HomeEntry} locale={locale} preview={preview}>
+    <slot name="banner" slot="banner" />
+  </Home>
+) : entry.type === "page" ? (
+  <Page entry={entry as PageEntry} locale={locale} preview={preview}>
+    <slot name="banner" slot="banner" />
+  </Page>
+) : entry.type === "post" ? (
+  <Post entry={entry as PostEntry} locale={locale} preview={preview}>
+    <slot name="banner" slot="banner" />
+  </Post>
+) : (
+  <Base locale={locale} title={entry.seo?.title ?? title} description={entry.seo?.description} image={entry.seo?.image} alternates={entry.meta.alternates} noindex={preview || entry.seo?.noindex}>
+    <slot name="banner" slot="banner" />
+    <header class="container page-header">
+      <h1>{title}</h1>
+    </header>
+    {sections.map((field) =>
+      field.type === "blocks" ? (
+        <Blocks blocks={entry[field.apiId] as Block[] | null} locale={locale} />
+      ) : hasRichText(entry[field.apiId]) ? (
+        <section class="block container container--narrow">
+          <div class="prose" set:html={entry[field.apiId]} />
+        </section>
+      ) : null,
+    )}
+  </Base>
+)}

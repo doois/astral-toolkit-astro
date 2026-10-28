@@ -1,0 +1,26 @@
+---
+// A CMS image: WebP srcset at the project's widths, intrinsic width and height
+// (no layout shift), lazy by default. The first image of a page is eager with
+// fetchpriority="high"; the count lives in Astro.locals, so blocks need no
+// coordination. Pass `priority` to decide by hand.
+import { imageAttrs, type Media } from "../lib/astral/index.ts";
+
+type Props = {
+  media: Media | null | undefined;
+  sizes?: string;
+  priority?: boolean;
+  alt?: string;
+  class?: string;
+};
+
+const { media, sizes, priority, alt, class: className } = Astro.props;
+let attrs: ReturnType<typeof imageAttrs> | null = null;
+if (media) {
+  const locals = Astro.locals as { images?: number };
+  const first = priority ?? (locals.images ?? 0) === 0;
+  locals.images = (locals.images ?? 0) + 1;
+  attrs = imageAttrs(media, { sizes, priority: first, ...(alt !== undefined ? { alt } : {}) });
+}
+---
+
+{attrs && <img {...attrs} class={className} />}

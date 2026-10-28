@@ -1,0 +1,21 @@
+---
+// A page is its blocks. When the first block is not a hero, the title opens the page.
+import Base from "../layouts/Base.astro";
+import Blocks from "../blocks/Blocks.astro";
+import type { Page } from "../lib/cms.ts";
+
+type Props = { entry: Page; locale: string; preview?: boolean };
+const { entry, locale, preview = false } = Astro.props;
+const blocks = entry.blocks ?? [];
+const opensWithHero = blocks[0]?.component === "hero";
+---
+
+<Base locale={locale} title={entry.seo?.title ?? entry.title} description={entry.seo?.description} image={entry.seo?.image} canonical={entry.seo?.canonical} alternates={entry.meta.alternates} noindex={preview || entry.seo?.noindex}>
+  <slot name="banner" slot="banner" />
+  {!opensWithHero && (
+    <header class="container page-header">
+      <h1>{entry.title}</h1>
+    </header>
+  )}
+  <Blocks blocks={blocks} locale={locale} />
+</Base>

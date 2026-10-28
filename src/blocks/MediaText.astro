@@ -1,0 +1,31 @@
+---
+import Image from "../components/Image.astro";
+import { hasRichText, type Block, type Media } from "../lib/astral/index.ts";
+import type { Link } from "../lib/cms.ts";
+
+type Props = { block: Block<{ title: string; text: string | null; image: Media | null; imageSide: string | null; link: Link | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const Heading = index === 0 ? "h1" : "h2";
+const start = block.imageSide === "start";
+---
+
+<section class:list={["block", "block-mediatext", "mediatext", { "mediatext--start": start }]} data-block={block.key}>
+  <div class="container">
+    <div class="mediatext__grid">
+      <div class="mediatext__content">
+        <Heading>{block.title}</Heading>
+        {hasRichText(block.text) && <div class="prose" set:html={block.text} />}
+        {block.link?.url && (
+          <a class="arrow-link" href={block.link.url} target={block.link.newTab ? "_blank" : undefined} rel={block.link.newTab ? "noopener" : undefined}>
+            {block.link.label}
+          </a>
+        )}
+      </div>
+      {block.image && (
+        <div class="mediatext__media">
+          <Image media={block.image} sizes="(min-width: 56em) 36rem, 100vw" />
+        </div>
+      )}
+    </div>
+  </div>
+</section>

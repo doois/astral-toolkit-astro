@@ -1,0 +1,48 @@
+---
+// Renders a `blocks` field: one component per CMS component apiId. A block of
+// a component this site does not know is skipped (and noted in dev), so adding
+// a component in the CMS never breaks the build. To add a block: create
+// src/blocks/<Name>.astro and register it here (README, "Como adicionar um bloco").
+import type { Block } from "../lib/astral/index.ts";
+import Hero from "./Hero.astro";
+import RichText from "./RichText.astro";
+import Features from "./Features.astro";
+import MediaText from "./MediaText.astro";
+import Gallery from "./Gallery.astro";
+import Testimonials from "./Testimonials.astro";
+import Faq from "./Faq.astro";
+import Logos from "./Logos.astro";
+import Stats from "./Stats.astro";
+import Cta from "./Cta.astro";
+import PostList from "./PostList.astro";
+
+type Props = { blocks: Block[] | null | undefined; locale: string };
+const { blocks, locale } = Astro.props;
+
+// Astro components are typed by their own Props; the registry only needs to know they render.
+type BlockComponent = (props: any) => any;
+const REGISTRY: Record<string, BlockComponent> = {
+  hero: Hero,
+  richtext: RichText,
+  features: Features,
+  mediatext: MediaText,
+  gallery: Gallery,
+  testimonials: Testimonials,
+  faq: Faq,
+  logos: Logos,
+  stats: Stats,
+  cta: Cta,
+  postlist: PostList,
+};
+
+const list = (blocks ?? []).filter((block) => {
+  const known = block.component in REGISTRY;
+  if (!known && import.meta.env.DEV) console.warn(`[astral] bloco "${block.component}" sem componente em src/blocks`);
+  return known;
+});
+---
+
+{list.map((block, index) => {
+  const Component = REGISTRY[block.component]!;
+  return <Component block={block} locale={locale} index={index} />;
+})}

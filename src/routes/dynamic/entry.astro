@@ -1,0 +1,12 @@
+---
+// One entry at its public URL, rendered on demand (types with render
+// "revalidate" or "dynamic"). The middleware caches "revalidate" answers.
+export const prerender = false;
+import Entry from "../../templates/Entry.astro";
+import { resolveEntry } from "../../lib/resolve.ts";
+
+const found = await resolveEntry(Astro.routePattern, Astro.params, {}, Astro.locals);
+if (!found) return new Response(null, { status: 404 });
+---
+
+<Entry entry={found.entry} locale={found.locale} />

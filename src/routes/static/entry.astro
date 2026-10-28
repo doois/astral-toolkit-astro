@@ -1,0 +1,15 @@
+---
+// One entry at its public URL, prerendered. Injected by src/integration/astral.ts
+// once per static type and locale ("/en/blog/[slug]"); the locale and type
+// come back from the route pattern (src/lib/resolve.ts).
+export const prerender = true;
+import Entry from "../../templates/Entry.astro";
+import { entryPaths, resolveEntry } from "../../lib/resolve.ts";
+
+export const getStaticPaths = ({ routePattern }: { routePattern: string }) => entryPaths(routePattern);
+
+const found = await resolveEntry(Astro.routePattern, Astro.params, Astro.props, Astro.locals);
+if (!found) return new Response(null, { status: 404 });
+---
+
+<Entry entry={found.entry} locale={found.locale} />

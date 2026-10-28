@@ -1,0 +1,60 @@
+---
+import { getMenu, type Settings } from "../lib/cms.ts";
+import { t } from "../lib/i18n.ts";
+
+type Props = { locale: string; settings: Settings; homeOf: (locale: string) => string };
+
+const { locale, settings, homeOf } = Astro.props;
+const ui = t(locale);
+const menu = await getMenu("footer", locale);
+const social = (settings.social ?? []).filter((s) => s.url && s.label);
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div class="site-footer__about">
+        <a class="brand" href={homeOf(locale)}>{settings.siteName}</a>
+        {settings.description && <p>{settings.description}</p>}
+        {settings.contactEmail && (
+          <p>
+            <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>
+          </p>
+        )}
+      </div>
+      {menu.items.length > 0 && (
+        <nav aria-label={menu.name}>
+          <h3>{menu.name}</h3>
+          <ul>
+            {menu.items.map((item) => (
+              <li>
+                <a href={item.url ?? "#"} target={item.newTab ? "_blank" : undefined} rel={item.newTab ? "noopener" : undefined}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      {social.length > 0 && (
+        <div>
+          <h3>Social</h3>
+          <ul>
+            {social.map((s) => (
+              <li>
+                <a href={s.url} target={s.newTab ? "_blank" : undefined} rel={s.newTab ? "noopener" : undefined}>
+                  {s.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+    <div class="site-footer__bottom">
+      <span>{settings.footerText || `${settings.siteName}, ${year}`}</span>
+      <a href={homeOf(locale)}>{ui.home}</a>
+    </div>
+  </div>
+</footer>

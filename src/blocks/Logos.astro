@@ -1,0 +1,24 @@
+---
+// Logos are shown at a fixed height; the alt text (the company name) is the accessible name.
+import Image from "../components/Image.astro";
+import type { Block, Media } from "../lib/astral/index.ts";
+
+type Props = { block: Block<{ title: string | null; logos: Media[] | null }>; locale: string; index: number };
+const { block } = Astro.props;
+const logos = block.logos ?? [];
+---
+
+{logos.length > 0 && (
+  <section class="block block-logos logos" data-block={block.key}>
+    <div class="container">
+      {block.title && <p class="logos__title eyebrow">{block.title}</p>}
+      <ul class="logos__list">
+        {logos.map((logo) => (
+          <li>
+            <Image media={logo} sizes="160px" priority={false} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}

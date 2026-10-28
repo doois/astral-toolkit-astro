@@ -1,0 +1,32 @@
+---
+import Image from "../components/Image.astro";
+import type { Block, Media } from "../lib/astral/index.ts";
+
+type Props = { block: Block<{ title: string | null; images: Media[] | null; columns: string | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const columns = block.columns === "2" ? "2" : "3";
+const Heading = index === 0 ? "h1" : "h2";
+const images = block.images ?? [];
+---
+
+{images.length > 0 && (
+  <section class="block block-gallery gallery" data-block={block.key}>
+    <div class="container">
+      {block.title && (
+        <div class="block__head">
+          <Heading>{block.title}</Heading>
+        </div>
+      )}
+      <ul class:list={["gallery__grid", `gallery__grid--${columns}`]}>
+        {images.map((image) => (
+          <li>
+            <figure class="gallery__item">
+              <Image media={image} sizes={columns === "2" ? "(min-width: 74rem) 36rem, 50vw" : "(min-width: 74rem) 24rem, (min-width: 48em) 33vw, 50vw"} />
+              {image.caption && <figcaption>{image.caption}</figcaption>}
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}

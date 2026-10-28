@@ -1,0 +1,17 @@
+---
+import Base from "../layouts/Base.astro";
+import Blocks from "../blocks/Blocks.astro";
+import config from "astral:config";
+import { getSettings, type Home } from "../lib/cms.ts";
+import { fillPattern } from "../lib/astral/index.ts";
+
+type Props = { entry: Home; locale: string; preview?: boolean };
+const { entry, locale, preview = false } = Astro.props;
+const settings = await getSettings(locale);
+const alternates = config.format.locales.map((l) => ({ locale: l, url: fillPattern("/", { slug: "", locale: l }, config.format) }));
+---
+
+<Base locale={locale} title={entry.seo?.title ?? settings.siteName} description={entry.seo?.description ?? settings.description} image={entry.seo?.image} canonical={entry.seo?.canonical} alternates={alternates} noindex={preview || entry.seo?.noindex}>
+  <slot name="banner" slot="banner" />
+  <Blocks blocks={entry.blocks} locale={locale} />
+</Base>

@@ -1,0 +1,34 @@
+---
+// Each question is a <details>: expandable without JavaScript, and the answers
+// are in the HTML for search engines. FAQPage structured data goes along.
+import { hasRichText, plainText, type Block } from "../lib/astral/index.ts";
+
+type Item = { question: string; answer: string | null };
+type Props = { block: Block<{ title: string | null; text: string | null; items: Item[] | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const Heading = index === 0 ? "h1" : "h2";
+const items = (block.items ?? []).filter((item) => item.question);
+const jsonLd = JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: items.map((item) => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: plainText(item.answer ?? "") } })) }).replace(/</g, "\\u003c");
+---
+
+{items.length > 0 && (
+  <section class="block block-faq faq" data-block={block.key}>
+    <div class="container">
+      {(block.title || block.text) && (
+        <div class="block__head">
+          {block.title && <Heading>{block.title}</Heading>}
+          {block.text && <p class="lede">{block.text}</p>}
+        </div>
+      )}
+      <div class="faq__list">
+        {items.map((item) => (
+          <details class="faq__item">
+            <summary>{item.question}</summary>
+            {hasRichText(item.answer) && <div class="faq__answer prose" set:html={item.answer} />}
+          </details>
+        ))}
+      </div>
+    </div>
+    <script type="application/ld+json" set:html={jsonLd} />
+  </section>
+)}

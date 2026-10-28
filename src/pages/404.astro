@@ -1,0 +1,30 @@
+---
+// Prerendered once, in the default locale; the Node adapter (and most static
+// hosts) serve it for every unknown address.
+import config from "astral:config";
+import Base from "../layouts/Base.astro";
+import { fillPattern } from "../lib/astral/index.ts";
+import { localeName, t } from "../lib/i18n.ts";
+
+const locale = config.format.defaultLocale;
+const ui = t(locale);
+const homes = config.format.locales.map((l) => ({ locale: l, url: fillPattern("/", { slug: "", locale: l }, config.format) }));
+---
+
+<Base locale={locale} title={ui.notFoundTitle} noindex={true}>
+  <div class="container not-found">
+    <p class="eyebrow">404</p>
+    <h1>{ui.notFoundTitle}</h1>
+    <p class="lede">{ui.notFoundText}</p>
+    <p>
+      {homes.map((home, i) => (
+        <>
+          {i > 0 && " · "}
+          <a href={home.url} hreflang={home.locale} lang={home.locale}>
+            {home.locale === locale ? ui.backHome : localeName(home.locale)}
+          </a>
+        </>
+      ))}
+    </p>
+  </div>
+</Base>

@@ -1,0 +1,36 @@
+---
+import Icon from "../components/Icon.astro";
+import type { Block } from "../lib/astral/index.ts";
+import type { Link } from "../lib/cms.ts";
+
+type Feature = { icon: string | null; title: string; text: string | null; link: Link | null };
+type Props = { block: Block<{ title: string | null; text: string | null; items: Feature[] | null; columns: string | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const columns = ["2", "3", "4"].includes(block.columns ?? "") ? block.columns : "3";
+const Heading = index === 0 ? "h1" : "h2";
+---
+
+<section class="block block-features features" data-block={block.key}>
+  <div class="container">
+    {(block.title || block.text) && (
+      <div class="block__head">
+        {block.title && <Heading>{block.title}</Heading>}
+        {block.text && <p class="lede">{block.text}</p>}
+      </div>
+    )}
+    <ul class:list={["features__grid", `features__grid--${columns}`]}>
+      {(block.items ?? []).map((item) => (
+        <li class="feature">
+          <Icon name={item.icon} />
+          <h3>{item.title}</h3>
+          {item.text && <p>{item.text}</p>}
+          {item.link?.url && (
+            <a class="arrow-link" href={item.link.url} target={item.link.newTab ? "_blank" : undefined} rel={item.link.newTab ? "noopener" : undefined}>
+              {item.link.label}
+            </a>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

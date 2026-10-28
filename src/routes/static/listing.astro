@@ -1,0 +1,14 @@
+---
+// The listing of a collection ("/blog", "/en/blog") and its pages ("/blog/pagina/2"), prerendered.
+export const prerender = true;
+import Listing from "../../templates/Listing.astro";
+import { listingPaths, resolveListing } from "../../lib/resolve.ts";
+
+export const getStaticPaths = ({ routePattern }: { routePattern: string }) => listingPaths(routePattern);
+
+const result = await resolveListing(Astro.routePattern, Astro.params);
+if (result.kind === "redirect") return Astro.redirect(result.to, 301);
+if (result.kind === "notFound") return new Response(null, { status: 404 });
+---
+
+<Listing {...result.props} />

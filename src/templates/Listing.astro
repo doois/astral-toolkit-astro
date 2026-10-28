@@ -1,0 +1,61 @@
+---
+// The blog: a page of posts with the category filter (links, so the filter is
+// crawlable and works without JavaScript) and pagination.
+import Base from "../layouts/Base.astro";
+import PostCard from "../components/PostCard.astro";
+import Pagination from "../components/Pagination.astro";
+import type { ListMeta, Term } from "../lib/astral/index.ts";
+import type { Post } from "../lib/cms.ts";
+import { t } from "../lib/i18n.ts";
+
+type Props = {
+  locale: string;
+  title: string;
+  description?: string | null;
+  posts: Post[];
+  meta: ListMeta;
+  /** The listing's page-1 URL (pagination builds on it). */
+  base: string;
+  /** The listing of every post (the "all" filter). */
+  allUrl: string;
+  terms: Term[];
+  current?: Term | null;
+  alternates: { locale: string; url: string | null }[];
+};
+const { locale, title, description, posts, meta, base, allUrl, terms, current = null, alternates } = Astro.props;
+const ui = t(locale);
+const canonical = meta.page > 1 ? Astro.url.pathname : base;
+---
+
+<Base locale={locale} title={meta.page > 1 ? `${title} (${ui.page(meta.page, meta.pageCount)})` : title} description={description} alternates={alternates} canonical={canonical} currentPath={allUrl}>
+  <div class="container">
+    <header class="page-header">
+      <p class="eyebrow">{ui.blog}</p>
+      <h1>{title}</h1>
+      {description && <p class="lede">{description}</p>}
+    </header>
+    {terms.length > 0 && (
+      <nav class="filters" aria-label={ui.categories}>
+        <a href={allUrl} aria-current={current ? undefined : "page"}>{ui.allCategories}</a>
+        {terms.map((term) => (
+          <a href={term.url ?? allUrl} aria-current={current?.id === term.id ? "page" : undefined}>
+            {term.name}
+            {typeof term.count === "number" && <span class="visually-hidden"> ({term.count})</span>}
+          </a>
+        ))}
+      </nav>
+    )}
+    {posts.length ? (
+      <ul class="post-grid">
+        {posts.map((post) => (
+          <li>
+            <PostCard post={post} locale={locale} headingLevel="h2" />
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="empty">{ui.noPosts}</p>
+    )}
+    <Pagination page={meta.page} pageCount={meta.pageCount} base={base} locale={locale} />
+  </div>
+</Base>

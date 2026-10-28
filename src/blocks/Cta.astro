@@ -1,0 +1,26 @@
+---
+import type { Block } from "../lib/astral/index.ts";
+import type { Link } from "../lib/cms.ts";
+
+type Props = { block: Block<{ title: string; text: string | null; button: Link | null; tone: string | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const accent = block.tone !== "neutral";
+const Heading = index === 0 ? "h1" : "h2";
+const button = block.button?.url ? block.button : null;
+---
+
+<section class:list={["block", "block-cta", "cta", { "cta--accent": accent }]} data-block={block.key}>
+  <div class="container">
+    <div class="cta__box">
+      <div>
+        <Heading>{block.title}</Heading>
+        {block.text && <p>{block.text}</p>}
+      </div>
+      {button && (
+        <a class:list={["button", accent ? "button--accent" : ""]} href={button.url} target={button.newTab ? "_blank" : undefined} rel={button.newTab ? "noopener" : undefined}>
+          {button.label}
+        </a>
+      )}
+    </div>
+  </div>
+</section>

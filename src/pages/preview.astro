@@ -1,0 +1,49 @@
+---
+// Draft preview. The editor's "Preview" button opens this address with a signed
+// token (the project's preview URL is "<site>/preview?token={token}"); the token
+// is traded for the draft at the CMS, no API key involved. Never cached, never
+// indexed, and the page says it is a draft.
+export const prerender = false;
+
+import Entry from "../templates/Entry.astro";
+import { cms } from "../lib/cms.ts";
+import { t } from "../lib/i18n.ts";
+
+Astro.response.headers.set("cache-control", "private, no-store");
+Astro.response.headers.set("x-robots-tag", "noindex, nofollow");
+
+const token = Astro.url.searchParams.get("token") ?? Astro.url.searchParams.get("preview") ?? "";
+let entry = null;
+let problem = "";
+if (!token) problem = "token_missing";
+else {
+  try {
+    entry = await cms.preview(token);
+  } catch (error) {
+    problem = error instanceof Error && "code" in error ? String((error as { code: string }).code) : "preview_failed";
+  }
+}
+if (!entry) Astro.response.status = 401;
+---
+
+{entry ? (
+  <Entry entry={entry} locale={entry.locale} preview={true}>
+    <div class="preview-banner" slot="banner" role="status">
+      {t(entry.locale).draftPreview}
+    </div>
+  </Entry>
+) : (
+  <html lang="pt-BR">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="robots" content="noindex" />
+      <title>Preview</title>
+    </head>
+    <body style="font-family: system-ui; padding: 2rem">
+      <h1>Pré-visualização indisponível</h1>
+      <p>
+        O link de pré-visualização é inválido ou expirou (<code>{problem}</code>). Abra de novo pelo botão Pré-visualizar no CMS.
+      </p>
+    </body>
+  </html>
+)}

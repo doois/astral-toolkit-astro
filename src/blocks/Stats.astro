@@ -1,0 +1,26 @@
+---
+import type { Block } from "../lib/astral/index.ts";
+
+type Stat = { value: string; label: string };
+type Props = { block: Block<{ title: string | null; items: Stat[] | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const Heading = index === 0 ? "h1" : "h2";
+---
+
+<section class="block block-stats stats" data-block={block.key}>
+  <div class="container">
+    {block.title && (
+      <div class="block__head">
+        <Heading>{block.title}</Heading>
+      </div>
+    )}
+    <ul class="stats__grid">
+      {(block.items ?? []).map((item) => (
+        <li class="stat">
+          <span class="stat__value">{item.value}</span>
+          <span class="stat__label">{item.label}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

@@ -1,0 +1,16 @@
+---
+import { t } from "../lib/i18n.ts";
+import { pagedUrl } from "../lib/routes.ts";
+
+type Props = { page: number; pageCount: number; base: string; locale: string };
+const { page, pageCount, base, locale } = Astro.props;
+const ui = t(locale);
+---
+
+{pageCount > 1 && (
+  <nav class="pagination" aria-label={ui.page(page, pageCount)}>
+    {page > 1 ? <a href={pagedUrl(base, page - 1, locale)} rel="prev">← {ui.previous}</a> : <span aria-disabled="true">← {ui.previous}</span>}
+    <span class="pagination__status">{ui.page(page, pageCount)}</span>
+    {page < pageCount ? <a href={pagedUrl(base, page + 1, locale)} rel="next">{ui.next} →</a> : <span aria-disabled="true">{ui.next} →</span>}
+  </nav>
+)}

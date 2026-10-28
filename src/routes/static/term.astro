@@ -1,0 +1,14 @@
+---
+// A category archive ("/blog/categoria/design") and its pages, prerendered.
+export const prerender = true;
+import Listing from "../../templates/Listing.astro";
+import { resolveTerm, termPaths } from "../../lib/resolve.ts";
+
+export const getStaticPaths = ({ routePattern }: { routePattern: string }) => termPaths(routePattern);
+
+const result = await resolveTerm(Astro.routePattern, Astro.params, Astro.locals);
+if (result.kind === "redirect") return Astro.redirect(result.to, 301);
+if (result.kind === "notFound") return new Response(null, { status: 404 });
+---
+
+<Listing {...result.props} />

@@ -1,0 +1,43 @@
+---
+import Image from "../components/Image.astro";
+import type { Block, Media } from "../lib/astral/index.ts";
+import type { Link } from "../lib/cms.ts";
+
+type Props = { block: Block<{ eyebrow: string | null; title: string; text: string | null; image: Media | null; primary: Link | null; secondary: Link | null; align: string | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const center = block.align === "center";
+const Heading = index === 0 ? "h1" : "h2";
+const primary = block.primary?.url ? block.primary : null;
+const secondary = block.secondary?.url ? block.secondary : null;
+---
+
+<section class:list={["block", "block-hero", "hero", { "hero--center": center }]} data-block={block.key}>
+  <div class="container">
+    <div class:list={["hero__grid", { "hero__grid--image": !!block.image && !center }]}>
+      <div class="hero__content">
+        {block.eyebrow && <p class="eyebrow">{block.eyebrow}</p>}
+        <Heading class="display">{block.title}</Heading>
+        {block.text && <p class="hero__text">{block.text}</p>}
+        {(primary || secondary) && (
+          <div class="hero__actions">
+            {primary && (
+              <a class="button" href={primary.url} target={primary.newTab ? "_blank" : undefined} rel={primary.newTab ? "noopener" : undefined}>
+                {primary.label}
+              </a>
+            )}
+            {secondary && (
+              <a class="button button--secondary" href={secondary.url} target={secondary.newTab ? "_blank" : undefined} rel={secondary.newTab ? "noopener" : undefined}>
+                {secondary.label}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+      {block.image && (
+        <div class="hero__media">
+          <Image media={block.image} sizes={center ? "(min-width: 74rem) 74rem, 100vw" : "(min-width: 56em) 40vw, 100vw"} />
+        </div>
+      )}
+    </div>
+  </div>
+</section>

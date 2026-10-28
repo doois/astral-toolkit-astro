@@ -1,0 +1,57 @@
+---
+// The latest posts. With `live`, the server-rendered list is also an island:
+// a tiny custom element fetches /api/astral/posts in the browser and replaces
+// the cards, so a static page shows new posts before the next build. It is the
+// only JavaScript the toolkit ships, and only on pages with a live list.
+import PostCard from "../components/PostCard.astro";
+import { listPosts } from "../lib/cms.ts";
+import { t } from "../lib/i18n.ts";
+import type { Block } from "../lib/astral/index.ts";
+import type { Link } from "../lib/cms.ts";
+
+type Props = { block: Block<{ title: string | null; text: string | null; limit: number | null; category: string | null; live: boolean | null; link: Link | null }>; locale: string; index: number };
+const { block, locale, index } = Astro.props;
+const ui = t(locale);
+const limit = Math.min(Math.max(Number(block.limit) || 3, 1), 12);
+const category = block.category?.trim() || undefined;
+const { data: posts } = await listPosts(locale, 1, category, limit);
+const Heading = index === 0 ? "h1" : "h2";
+const live = block.live === true;
+const liveUrl = live ? `/api/astral/posts?${new URLSearchParams({ locale, limit: String(limit), ...(category ? { category } : {}) })}` : null;
+---
+
+<section class="block block-postlist postlist" data-block={block.key}>
+  <div class="container">
+    {(block.title || block.text) && (
+      <div class="block__head">
+        {block.title && <Heading>{block.title}</Heading>}
+        {block.text && <p class="lede">{block.text}</p>}
+      </div>
+    )}
+    <astral-live-list data-url={liveUrl} data-locale={locale} data-loading={ui.loading}>
+      {posts.length ? (
+        <ul class="post-grid">
+          {posts.map((post) => (
+            <li>
+              <PostCard post={post} locale={locale} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="empty">{ui.noPosts}</p>
+      )}
+    </astral-live-list>
+    {block.link?.url && (
+      <p class="postlist__foot">
+        <a class="arrow-link" href={block.link.url}>{block.link.label}</a>
+      </p>
+    )}
+  </div>
+</section>
+
+{live && (
+  <script>
+    import { defineLiveList } from "../lib/live-list.ts";
+    defineLiveList();
+  </script>
+)}

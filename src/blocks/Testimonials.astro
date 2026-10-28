@@ -1,0 +1,35 @@
+---
+import Image from "../components/Image.astro";
+import type { Block, Media } from "../lib/astral/index.ts";
+
+type Testimonial = { quote: string; name: string; role: string | null; photo: Media | null };
+type Props = { block: Block<{ title: string | null; items: Testimonial[] | null }>; locale: string; index: number };
+const { block, index } = Astro.props;
+const Heading = index === 0 ? "h1" : "h2";
+---
+
+<section class="block block-testimonials testimonials" data-block={block.key}>
+  <div class="container">
+    {block.title && (
+      <div class="block__head">
+        <Heading>{block.title}</Heading>
+      </div>
+    )}
+    <ul class="testimonials__grid">
+      {(block.items ?? []).map((item) => (
+        <li>
+          <figure class="testimonial">
+            <blockquote>{item.quote}</blockquote>
+            <figcaption>
+              {item.photo && <Image media={item.photo} sizes="40px" alt="" />}
+              <span>
+                <strong>{item.name}</strong>
+                {item.role}
+              </span>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

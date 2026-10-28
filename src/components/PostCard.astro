@@ -1,0 +1,25 @@
+---
+import Image from "./Image.astro";
+import type { Post } from "../lib/cms.ts";
+import { formatDate } from "../lib/i18n.ts";
+
+type Props = { post: Post; locale: string; headingLevel?: "h2" | "h3" };
+const { post, locale, headingLevel: Heading = "h3" } = Astro.props;
+const category = post.category?.[0] ?? null;
+---
+
+<article class="post-card">
+  {post.cover && (
+    <a class="post-card__media" href={post.meta.url ?? "#"} tabindex="-1" aria-hidden="true">
+      <Image media={post.cover} sizes="(min-width: 64em) 24rem, (min-width: 40em) 50vw, 100vw" alt="" />
+    </a>
+  )}
+  <div class="post-card__meta">
+    {post.date && <time datetime={post.date}>{formatDate(post.date, locale)}</time>}
+    {category && (category.url ? <a href={category.url}>{category.name}</a> : <span>{category.name}</span>)}
+  </div>
+  <Heading class="post-card__title">
+    <a href={post.meta.url ?? "#"}>{post.title}</a>
+  </Heading>
+  {post.excerpt && <p class="post-card__excerpt">{post.excerpt}</p>}
+</article>

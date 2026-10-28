@@ -1,0 +1,25 @@
+{
+  "name": "astral-toolkit-astro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/build.mjs",
+    "build:astro": "astro build",
+    "preview": "astro preview",
+    "start": "node --env-file-if-exists=.env ./dist/server/entry.mjs",
+    "check": "astro check",
+    "lhci": "lhci autorun",
+    "seed:demo": "node scripts/seed-demo.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.9",
+    "astro": "^7.4.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@lhci/cli": "^0.15.1",
+    "typescript": "^5.9.3"
+  }
+}

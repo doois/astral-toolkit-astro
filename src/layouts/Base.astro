@@ -1,0 +1,94 @@
+---
+// The document around every page: head (title, description, canonical,
+// hreflang, Open Graph, JSON-LD), the single stylesheet, the preloaded text
+// font, header, footer. Everything it needs from the CMS (settings, menus,
+// site JSON-LD) is memoized per build or per cache window.
+import "../styles/index.css";
+import config from "astral:config";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { getSettings, getSiteJsonLd } from "../lib/cms.ts";
+import { env } from "../lib/env.ts";
+import { fillPattern, type Media } from "../lib/astral/index.ts";
+import { t } from "../lib/i18n.ts";
+
+type Props = {
+  locale: string;
+  title: string;
+  description?: string | null;
+  /** Share image (og:image). */
+  image?: Media | null;
+  /** The page's own canonical path or URL; default: the current path. */
+  canonical?: string | null;
+  /** The same page in other locales (hreflang and the language switcher). */
+  alternates?: { locale: string; url: string | null }[];
+  noindex?: boolean;
+  /** schema.org items added to the site's graph (Organization, WebSite). */
+  jsonLd?: Record<string, unknown>[];
+  ogType?: "website" | "article";
+  /** The header's current item: the path the menu should mark (default: the current path). */
+  currentPath?: string;
+};
+
+const { locale, title, description, image, canonical, alternates = [], noindex = false, jsonLd = [], ogType = "website", currentPath } = Astro.props;
+const ui = t(locale);
+const [settings, siteGraph] = await Promise.all([getSettings(locale), getSiteJsonLd()]);
+const siteName = settings.siteName || env.project;
+const fullTitle = title && title !== siteName ? `${title} · ${siteName}` : siteName;
+const metaDescription = description || settings.description || "";
+
+const absolute = (path: string) => (/^https?:\/\//.test(path) ? path : new URL(path, env.siteUrl).href);
+const path = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const canonicalUrl = absolute(canonical || path);
+const ogImage = image?.url ?? settings.logo?.url ?? null;
+
+// hreflang: every locale the page exists in, plus x-default on the default locale.
+const languages = alternates.filter((a) => a.url).map((a) => ({ locale: a.locale, href: absolute(a.url!) }));
+const xDefault = languages.find((a) => a.locale === config.format.defaultLocale) ?? languages[0];
+
+const graph = [...(siteGraph?.["@graph"] ?? []), { "@type": "WebPage", "@id": `${canonicalUrl}#webpage`, url: canonicalUrl, name: fullTitle, ...(metaDescription ? { description: metaDescription } : {}), inLanguage: locale, ...(ogImage ? { image: ogImage } : {}) }, ...jsonLd];
+const structuredData = JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c");
+
+/** The home of a locale ("/" or "/en"). */
+const homeOf = (l: string) => fillPattern("/", { slug: "", locale: l }, config.format);
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {metaDescription && <meta name="description" content={metaDescription} />}
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {languages.length > 1 && languages.map((a) => <link rel="alternate" hreflang={a.locale} href={a.href} />)}
+    {languages.length > 1 && xDefault && <link rel="alternate" hreflang="x-default" href={xDefault.href} />}
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141316" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={fullTitle} />
+    {metaDescription && <meta property="og:description" content={metaDescription} />}
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={locale.replace("-", "_")} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && image?.width && image?.height && <meta property="og:image:width" content={String(image.width)} />}
+    {ogImage && image?.width && image?.height && <meta property="og:image:height" content={String(image.height)} />}
+    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin />
+    <script type="application/ld+json" set:html={structuredData} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#content">{ui.skipToContent}</a>
+    <Header locale={locale} settings={settings} alternates={alternates} currentPath={currentPath ?? path} homeOf={homeOf} />
+    <slot name="banner" />
+    <main id="content" tabindex="-1">
+      <slot />
+    </main>
+    <Footer locale={locale} settings={settings} homeOf={homeOf} />
+  </body>
+</html>

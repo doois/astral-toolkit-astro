@@ -1,0 +1,16 @@
+---
+// `body` is HTML the CMS sanitized (see src/lib/astral/richtext.ts): set:html is safe here.
+import { hasRichText, type Block } from "../lib/astral/index.ts";
+
+type Props = { block: Block<{ body: string | null; width: string | null }>; locale: string; index: number };
+const { block } = Astro.props;
+const wide = block.width === "wide";
+---
+
+{hasRichText(block.body) && (
+  <section class:list={["block", "block-richtext", "richtext", { "richtext--wide": wide }]} data-block={block.key}>
+    <div class:list={["container", { "container--narrow": !wide }]}>
+      <div class="prose" set:html={block.body} />
+    </div>
+  </section>
+)}

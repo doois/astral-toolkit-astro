@@ -1,0 +1,79 @@
+---
+// A post: header, cover (the page's first image, so eager and high priority),
+// body, author. JSON-LD comes from the CMS when the type has structured data
+// mapped (meta.jsonLd); otherwise the toolkit builds the BlogPosting itself.
+import Base from "../layouts/Base.astro";
+import Image from "../components/Image.astro";
+import { hasRichText, type Media } from "../lib/astral/index.ts";
+import type { Post } from "../lib/cms.ts";
+import { env } from "../lib/env.ts";
+import { formatDate, t } from "../lib/i18n.ts";
+
+type Props = { entry: Post; locale: string; preview?: boolean };
+const { entry, locale, preview = false } = Astro.props;
+const ui = t(locale);
+const category = entry.category?.[0] ?? null;
+const author = entry.author;
+const absolute = (path: string | null | undefined) => (path ? new URL(path, env.siteUrl).href : undefined);
+const cover: Media | null = entry.cover ?? entry.seo?.image ?? null;
+
+const jsonLd = entry.meta.jsonLd ?? {
+  "@type": "BlogPosting",
+  "@id": `${absolute(entry.meta.url)}#article`,
+  headline: entry.title,
+  ...(entry.excerpt ? { description: entry.excerpt } : {}),
+  ...(cover ? { image: cover.url } : {}),
+  ...(entry.date ? { datePublished: entry.date } : {}),
+  dateModified: entry.meta.updatedAt,
+  ...(author ? { author: { "@type": "Person", name: author.name } } : {}),
+  inLanguage: locale,
+  mainEntityOfPage: absolute(entry.meta.url),
+};
+---
+
+<Base locale={locale} title={entry.seo?.title ?? entry.title} description={entry.seo?.description ?? entry.excerpt} image={cover} canonical={entry.seo?.canonical} alternates={entry.meta.alternates} noindex={preview || entry.seo?.noindex} jsonLd={[jsonLd]} ogType="article">
+  <slot name="banner" slot="banner" />
+  <article class="post">
+    <header class="container post__header">
+      {category && (
+        <p class="eyebrow">
+          {category.url ? <a href={category.url}>{category.name}</a> : category.name}
+        </p>
+      )}
+      <h1>{entry.title}</h1>
+      {entry.excerpt && <p class="lede post__lede">{entry.excerpt}</p>}
+      <div class="post__byline">
+        {author?.photo && <Image media={author.photo} sizes="36px" alt="" priority={false} />}
+        {author && (
+          <span>
+            {ui.by} <strong>{author.name}</strong>
+          </span>
+        )}
+        {entry.date && (
+          <time datetime={entry.date}>
+            {formatDate(entry.date, locale)}
+          </time>
+        )}
+      </div>
+    </header>
+    {entry.cover && (
+      <div class="container post__cover">
+        <Image media={entry.cover} sizes="(min-width: 74rem) 74rem, 100vw" priority={true} />
+      </div>
+    )}
+    <div class="container post__body">
+      {hasRichText(entry.body) && <div class="prose" set:html={entry.body} />}
+    </div>
+    {author && (
+      <footer class="container post__footer">
+        <div class="author-card">
+          {author.photo && <Image media={author.photo} sizes="64px" alt="" priority={false} />}
+          <div>
+            <h3>{author.name}</h3>
+            {author.bio && <p>{author.bio}</p>}
+          </div>
+        </div>
+      </footer>
+    )}
+  </article>
+</Base>
