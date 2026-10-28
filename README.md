@@ -22,6 +22,7 @@ mesmo CSS ([DESIGN.md](DESIGN.md)); o que está aqui vale para todos.
 | `src/routes/` | Os pontos de entrada das rotas injetadas (`static/` pré-renderadas, `dynamic/` sob demanda) |
 | `src/pages/` | 404, `sitemap.xml`, `robots.txt`, `preview`, `api/astral/revalidate`, `api/astral/posts` |
 | `src/styles/` | Tokens, base, layout e blocos, em CSS puro |
+| `astral.convert.md` | O que o conversor de código do CMS pode mudar neste layout (caminhos, blocos, estilos) |
 | `scripts/` | `build.mjs` (build com status para o CMS), `seed-demo.mjs` (modelo e conteúdo de demonstração), `demo-assets/` |
 | `lighthouserc.json`, `.github/workflows/lighthouse.yml` | Lighthouse CI com mínimo 95 em todas as categorias |
 
@@ -38,7 +39,7 @@ Copie `.env.example` para `.env` e preencha (nunca versione o `.env`):
 | `ASTRAL_BUILD_WEBHOOK_ID` | Opcional: id desse webhook, para o build reportar o status ao CMS |
 | `SITE_URL` | Endereço público do site |
 | `ASTRAL_REBUILD_HOOK` | Opcional: URL chamada (POST) quando o site precisa ser reconstruído |
-| `ASTRAL_LOCALE_URLS` | Opcional: formato das URLs por idioma, se o `/schema` ainda não entregar (`prefix`, `prefix-all`, `domain`, `none`) |
+| `ASTRAL_LOCALE_URLS` | Opcional: formato das URLs por idioma (`prefix`, `prefix-all`, `domain`, `none`) só para um CMS antigo que não entregue `localeUrls` no `/schema`; o do CMS sempre vale mais |
 | `ASTRAL_BUILD_LOCALES` | Opcional: só estes idiomas neste build (formatos `domain` e `none`, um build por idioma) |
 
 No CMS, em Configurações do projeto: endereço do site (`SITE_URL`) e endereço de

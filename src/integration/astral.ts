@@ -32,7 +32,7 @@ export function astral(): AstroIntegration {
         } catch (error) {
           throw new Error(`Astral: não foi possível ler ${client.apiUrl}/schema (${error instanceof Error ? error.message : String(error)}). Confira ASTRAL_URL, ASTRAL_PROJECT e ASTRAL_TOKEN.`);
         }
-        const format = localeFormat(schema, { mode: env.localeUrls || undefined });
+        const format = localeFormat(schema, env.localeUrls ? { mode: env.localeUrls } : undefined);
         const only = (process.env.ASTRAL_BUILD_LOCALES ?? "").split(",").map((l) => l.trim()).filter((l) => format.locales.includes(l));
         const { routes, dropped } = buildRoutes(schema, format, only.length ? only : format.locales);
         for (const route of dropped) logger.warn(`rota ${route.pattern} (${route.locale}) ignorada: o mesmo caminho já serve outro idioma. No formato "${format.mode}" cada idioma é um build (ASTRAL_BUILD_LOCALES).`);

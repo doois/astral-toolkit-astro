@@ -8,11 +8,11 @@ import type { Entry, LocaleFormat, LocaleUrlMode, Schema } from "./types.js";
 
 const MODES: readonly LocaleUrlMode[] = ["prefix", "prefix-all", "domain", "none"];
 
-/** The project's locale URL format from its schema; `override` wins (an env var, say) when the server does not deliver it yet. */
-export function localeFormat(schema: Pick<Schema, "locales" | "defaultLocale" | "localeUrls" | "localeDomains">, override?: { mode?: string; domains?: Record<string, string> }): LocaleFormat {
-  const raw = override?.mode ?? schema.localeUrls ?? "prefix";
+/** The project's locale URL format from its schema; `fallback` (an env var, say) is used only when the server does not deliver it. */
+export function localeFormat(schema: Pick<Schema, "locales" | "defaultLocale" | "localeUrls" | "localeDomains">, fallback?: { mode?: string; domains?: Record<string, string> }): LocaleFormat {
+  const raw = schema.localeUrls ?? fallback?.mode ?? "prefix";
   const mode = (MODES as readonly string[]).includes(raw) ? (raw as LocaleUrlMode) : "prefix";
-  return { locales: schema.locales, defaultLocale: schema.defaultLocale, mode, domains: override?.domains ?? schema.localeDomains ?? {} };
+  return { locales: schema.locales, defaultLocale: schema.defaultLocale, mode, domains: schema.localeDomains ?? fallback?.domains ?? {} };
 }
 
 /** Puts a locale-free path where the format says; `placed` means the path already carries its locale. */
