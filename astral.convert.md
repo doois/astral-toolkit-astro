@@ -4,30 +4,20 @@ Read by the CMS's code-conversion job: how this toolkit is laid out and what a
 conversion may change. Everything outside the allowed paths is infrastructure
 shared by every Astral toolkit and stays as it is.
 
-## Stack
+## Writable paths
 
-Astro 7 (`output: "static"` + `@astrojs/node`), TypeScript strict, plain CSS
-(no Tailwind, no preprocessor, no `!important`), no UI framework, zero
-client-side JavaScript except the `postlist` live island. Content comes only
-from the Astral delivery API through `src/lib/cms.ts`; field shapes follow
-`astral.model.json`.
+- `src/blocks/`
+- `src/components/`
+- `src/layouts/`
+- `src/templates/`
+- `src/styles/`
+- `public/fonts/`
+- `public/favicon.svg`
+- `src/lib/i18n.ts`
+- `astral.model.json`
+- `DESIGN.md`
 
-## Allowed write paths
-
-```
-src/blocks/**
-src/components/**
-src/layouts/**
-src/templates/**
-src/styles/**
-public/fonts/**
-public/favicon.svg
-src/lib/i18n.ts
-astral.model.json
-DESIGN.md
-```
-
-## Design tokens file
+## Tokens
 
 `src/styles/tokens.css`: every color (light, and dark under
 `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` and
@@ -36,7 +26,7 @@ rhythm (`--space-1` to `--space-9`, `--section`, `--gutter`), layout widths, rad
 and motion. A re-brand changes this file first; new tokens go here, not inline.
 Keep `--ink` on `--paper` and `--accent` on `--paper` at 4.5:1 or more in both schemes.
 
-## Styles
+Styles:
 
 - Global: `src/styles/base.css` (fonts, reset, headings, `.prose`, `.button`,
   `.arrow-link`, `.container`, utilities) and `src/styles/layout.css` (header,
@@ -106,7 +96,7 @@ and its apiId in the `blocks` field of `home` and `page`); markup noted in `DESI
   `Listing.astro`; `Entry.astro` picks one by `entry.type`. Shared pieces:
   `src/components/PostCard.astro`, `Pagination.astro`, `Icon.astro`.
 
-## Static assets
+## Assets
 
 - Fonts: `public/fonts/*.woff2`, declared with `@font-face` at the top of
   `src/styles/base.css`; the text face is preloaded in `Base.astro`
@@ -119,7 +109,9 @@ and its apiId in the `blocks` field of `home` and `page`); markup noted in `DESI
 - Demo images and content: `scripts/demo-assets/` and `scripts/demo-content.mjs`
   (seed only, not part of the site).
 
-## Must not touch
+## Pages
+
+Routing and infrastructure the conversion must not touch:
 
 ```
 src/lib/astral/**          the shared client, synced from the CMS repository
@@ -141,3 +133,11 @@ lighthouserc.json
 scripts/**
 .env, .env.example, .gitignore
 ```
+
+## Notes
+
+Astro 7 (`output: "static"` + `@astrojs/node`), TypeScript strict, plain CSS
+(no Tailwind, no preprocessor, no `!important`), no UI framework, zero
+client-side JavaScript except the `postlist` live island. Content comes only
+from the Astral delivery API through `src/lib/cms.ts`; field shapes follow
+`astral.model.json`.
