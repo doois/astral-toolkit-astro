@@ -4,7 +4,7 @@
 // route patterns, listing pages, locale detection and free internal links.
 // They mirror cms/server/src/content/urls.ts.
 
-import type { Entry, LocaleFormat, LocaleUrlMode, Schema } from "./types.js";
+import type { Entry, LocaleFormat, LocaleUrlMode, Schema } from "./types";
 
 const MODES: readonly LocaleUrlMode[] = ["prefix", "prefix-all", "domain", "none"];
 

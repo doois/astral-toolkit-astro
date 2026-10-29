@@ -11,7 +11,7 @@ export class AstralNetworkError extends AstralError {
   override name = "AstralNetworkError";
   constructor(
     public readonly url: string,
-    public readonly cause: unknown,
+    public override readonly cause: unknown,
   ) {
     super(`Network error on ${url}: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
