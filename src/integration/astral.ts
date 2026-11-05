@@ -1,6 +1,8 @@
+import fs from "node:fs";
 import type { AstroIntegration } from "astro";
 import { loadEnv, type Plugin } from "vite";
 import { createClient, localeFormat, type Redirect } from "../lib/astral/index.ts";
+import { contentSecurityPolicy } from "../lib/csp.ts";
 import { env, requireEnv } from "../lib/env.ts";
 import { buildRoutes, type AstralConfig } from "../lib/routes.ts";
 
@@ -47,6 +49,13 @@ export function astral(): AstroIntegration {
 
         const summary = schema.types.filter((t) => t.urlPattern).map((t) => `${t.apiId}: ${t.render ?? "static"}`).join(", ");
         logger.info(`${routes.length} rotas de ${format.locales.join(", ")} (${format.mode}); ${summary}; ${redirects.length} redirecionamentos`);
+      },
+      // A static host (Cloudflare Pages, Netlify) reads its headers from this file. The policy depends
+      // on the environment, so it is written here and not kept in public/. A public/_headers is kept.
+      "astro:build:done": ({ dir }) => {
+        const file = new URL("_headers", dir);
+        const own = fs.existsSync(file) ? `${fs.readFileSync(file, "utf8").trimEnd()}\n\n` : "";
+        fs.writeFileSync(file, `${own}/*\n  Content-Security-Policy: ${contentSecurityPolicy()}\n`);
       },
     },
   };

@@ -1,8 +1,11 @@
 ---
 // Prerendered once, in the default locale; the Node adapter (and most static
-// hosts) serve it for every unknown address.
+// hosts) serve it for every unknown address. The adapter reads this file straight
+// from disk, past the middleware and the static headers: the Content-Security-Policy
+// goes in the document.
 import config from "astral:config";
 import Base from "../layouts/Base.astro";
+import { metaContentSecurityPolicy } from "../lib/csp.ts";
 import { fillPattern } from "../lib/astral/index.ts";
 import { localeName, t } from "../lib/i18n.ts";
 
@@ -12,6 +15,7 @@ const homes = config.format.locales.map((l) => ({ locale: l, url: fillPattern("/
 ---
 
 <Base locale={locale} title={ui.notFoundTitle} noindex={true}>
+  <meta slot="head" http-equiv="content-security-policy" content={metaContentSecurityPolicy()} />
   <div class="container not-found">
     <p class="eyebrow">404</p>
     <h1>{ui.notFoundTitle}</h1>

@@ -12,6 +12,10 @@ export const env = {
   get url() {
     return read("ASTRAL_URL").replace(/\/+$/, "");
   },
+  /** The CMS media host (its MEDIA_URL), when it has one; only the Content-Security-Policy reads it. */
+  get mediaUrl() {
+    return read("ASTRAL_MEDIA_URL").replace(/\/+$/, "");
+  },
   get project() {
     return read("ASTRAL_PROJECT");
   },

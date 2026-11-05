@@ -141,3 +141,7 @@ Astro 7 (`output: "static"` + `@astrojs/node`), TypeScript strict, plain CSS
 client-side JavaScript except the `postlist` live island. Content comes only
 from the Astral delivery API through `src/lib/cms.ts`; field shapes follow
 `astral.model.json`.
+
+The Content-Security-Policy (`src/lib/csp.ts`) allows no inline JavaScript: no
+`is:inline` scripts, no `onclick`, no third-party origins unless added there.
+Styles may be inline.

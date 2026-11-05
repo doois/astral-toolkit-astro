@@ -15,7 +15,7 @@ mesmo CSS ([DESIGN.md](DESIGN.md)); o que está aqui vale para todos.
 |---|---|
 | `astral.model.json` | O modelo do site (componentes, tipos, taxonomia, menus), no formato de proposta do CMS |
 | `src/lib/astral/` | O cliente JavaScript do Astral (copiado do repositório do CMS por `npm run toolkits:sync`; não edite aqui) |
-| `src/lib/` | `cms.ts` (o que os templates leem, com memo e tags), `cache.ts`, `routes.ts`, `resolve.ts`, `i18n.ts`, `env.ts` |
+| `src/lib/` | `cms.ts` (o que os templates leem, com memo e tags), `cache.ts`, `routes.ts`, `resolve.ts`, `i18n.ts`, `env.ts`, `csp.ts` |
 | `src/integration/astral.ts` | Lê o `/schema` do CMS ao carregar a configuração e injeta as rotas |
 | `src/blocks/` | Um componente Astro por componente do CMS, mais o `Blocks.astro` que os monta |
 | `src/templates/` | Página inicial, página, post, listagem, e o `Entry.astro` que escolhe por tipo |
@@ -37,6 +37,7 @@ Copie `.env.example` para `.env` e preencha (nunca versione o `.env`):
 | `ASTRAL_TOKEN` | Chave de leitura (`cms_xxxxxxxx_...`), com `entries:*:read`, `entries:*:preview` e `media.read` |
 | `ASTRAL_WEBHOOK_SECRET` | Segredo do webhook do projeto que aponta para `<site>/api/astral/revalidate` |
 | `ASTRAL_BUILD_WEBHOOK_ID` | Opcional: id desse webhook, para o build reportar o status ao CMS |
+| `ASTRAL_MEDIA_URL` | Opcional: host de mídia do CMS (o `MEDIA_URL` dele, como `https://cms-media.doois.com.br`), para a Content-Security-Policy; veja "Segurança" |
 | `SITE_URL` | Endereço público do site |
 | `ASTRAL_REBUILD_HOOK` | Opcional: URL chamada (POST) quando o site precisa ser reconstruído |
 | `ASTRAL_LOCALE_URLS` | Opcional: formato das URLs por idioma (`prefix`, `prefix-all`, `domain`, `none`) só para um CMS antigo que não entregue `localeUrls` no `/schema`; o do CMS sempre vale mais |
@@ -153,7 +154,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ARG ASTRAL_URL ASTRAL_PROJECT ASTRAL_TOKEN ASTRAL_WEBHOOK_SECRET ASTRAL_BUILD_WEBHOOK_ID SITE_URL
+ARG ASTRAL_URL ASTRAL_MEDIA_URL ASTRAL_PROJECT ASTRAL_TOKEN ASTRAL_WEBHOOK_SECRET ASTRAL_BUILD_WEBHOOK_ID SITE_URL
 RUN npm run build
 
 FROM node:22-alpine
@@ -168,13 +169,50 @@ CMD ["node", "./dist/server/entry.mjs"]
 
 ### Hospedagem estática (site todo `static`)
 
-`npm run build` e publique `dist/client` (Cloudflare Pages, Netlify, nginx com
-`try_files $uri $uri/index.html`). As URLs não têm barra no fim e cada página é
+`npm run build` e publique `dist/client`, com o `_headers` (veja "Segurança"), em Cloudflare Pages, Netlify ou nginx com
+`try_files $uri $uri/index.html`. As URLs não têm barra no fim e cada página é
 `<caminho>/index.html`. O host precisa servir `404.html` para endereços desconhecidos e
 tratar os redirecionamentos do CMS (o build gera páginas de `meta refresh` para eles; um
 `_redirects` ou regra do host é melhor). Sem servidor, não há `preview`, `revalidate` nem
 `api/astral/posts`: deixe todos os tipos em `static` e aponte o webhook do CMS, com
 agrupamento de eventos, para o hook de deploy do host.
+
+## Segurança: Content-Security-Policy
+
+`src/lib/csp.ts` monta a política, igual à dos outros toolkits:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+img-src 'self' data: <ASTRAL_URL> <ASTRAL_MEDIA_URL ou https:>; font-src 'self';
+connect-src 'self' <ASTRAL_URL>; form-action 'self'; frame-ancestors 'self';
+base-uri 'self'; object-src 'none'
+```
+
+Como ela chega ao navegador em cada caso:
+
+| Onde | Como |
+|---|---|
+| Rotas sob demanda (`revalidate`, `dynamic`, `preview`) | Cabeçalho, pelo `src/middleware.ts`, inclusive nas páginas guardadas em memória |
+| Páginas pré-renderadas no container Node | Cabeçalho: o middleware o define no build e o `staticHeaders` do adaptador o guarda em `dist/_headers.json` |
+| 404 no container Node | `<meta>` no documento: o adaptador lê o `404.html` direto do disco, sem middleware nem `staticHeaders`. Tudo vale, menos `frame-ancestors`, que o navegador ignora em `<meta>` |
+| Hospedagem estática | O build grava `dist/client/_headers` (Cloudflare Pages, Netlify) com o valor pronto, somado a um `public/_headers` se existir. Em outro host, copie o valor desse arquivo: no nginx, `add_header Content-Security-Policy "<valor>" always;` |
+
+A política vale no `astro build` e no `npm start`, não no `astro dev` (o Vite injeta scripts
+inline). As páginas pré-renderadas guardam o valor do build: `ASTRAL_MEDIA_URL` precisa
+estar no build e no container.
+
+- `security: { csp: true }` no `astro.config.mjs` é só a chave que faz o adaptador guardar
+  o cabeçalho. O valor é o do middleware, que substitui o do Astro: os hashes de estilo que o
+  Astro gera anulariam `'unsafe-inline'` e bloqueariam atributos `style`.
+- Nenhum script inline: o JSON-LD é bloco de dados (o `script-src` não o bloqueia) e a ilha
+  sai como arquivo em `/_astro`, porque o `assetsInlineLimit` não embute `.js`. Um bloco
+  novo com JavaScript usa `<script>` processado pelo Astro, nunca `is:inline` ou `onclick`.
+- As imagens vêm do CMS, mas a API não diz qual é o host de mídia. Com `ASTRAL_MEDIA_URL`
+  o `img-src` fica fechado nele; sem ela, aceita qualquer `https:` para não quebrar imagem.
+  Num CMS sem `MEDIA_URL`, repita o valor de `ASTRAL_URL` para fechar. Imagens externas em
+  campos `richtext` (o CMS permite qualquer `src` http/https) só carregam com a variável vazia.
+- Vídeos do YouTube ou Vimeo (`frame-src`), `<video>` do CMS (`media-src`) e serviços de
+  terceiros (analytics, mapas) precisam da origem acrescentada em `src/lib/csp.ts`.
 
 ## Idiomas
 
