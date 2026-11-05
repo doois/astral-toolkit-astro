@@ -2,11 +2,13 @@
 // Draft preview. The editor's "Preview" button opens this address with a signed
 // token (the project's preview URL is "<site>/preview?token={token}"); the token
 // is traded for the draft at the CMS, no API key involved. Never cached, never
-// indexed, and the page says it is a draft.
+// indexed, and the page says it is a draft. The CMS's live edit agent rides along:
+// the admin frames this page and the agent finds the fields by value (README).
 export const prerender = false;
 
 import Entry from "../templates/Entry.astro";
 import { cms } from "../lib/cms.ts";
+import { liveEditAgent } from "../lib/csp.ts";
 import { t } from "../lib/i18n.ts";
 
 Astro.response.headers.set("cache-control", "private, no-store");
@@ -31,6 +33,7 @@ if (!entry) Astro.response.status = 401;
     <div class="preview-banner" slot="banner" role="status">
       {t(entry.locale).draftPreview}
     </div>
+    <script is:inline slot="banner" src={liveEditAgent()} defer></script>
   </Entry>
 ) : (
   <html lang="pt-BR">

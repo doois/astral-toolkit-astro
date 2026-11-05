@@ -15,14 +15,15 @@ import { routeOf } from "./lib/routes.ts";
 // Every HTML answer carries the Content-Security-Policy, except in `astro dev`, where
 // Vite injects its own inline scripts. A prerendered page gets it here, at build time,
 // and keeps it through the adapter's staticHeaders. Pages kept in memory get it on the
-// way out, so a cached copy never holds an old policy.
+// way out, so a cached copy never holds an old policy. Only /preview gets the policy that
+// lets the CMS admin frame the page and run its live edit agent.
 
 const REVALIDATE_HEADERS = "public, max-age=0, s-maxage=31536000, stale-while-revalidate=86400";
 const DYNAMIC_HEADERS = "public, max-age=0, s-maxage=60, stale-while-revalidate=600";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const response = await cached(context, next);
-  if (!import.meta.env.DEV && (response.headers.get("content-type") ?? "").includes("text/html")) response.headers.set("content-security-policy", contentSecurityPolicy());
+  if (!import.meta.env.DEV && (response.headers.get("content-type") ?? "").includes("text/html")) response.headers.set("content-security-policy", contentSecurityPolicy(context.routePattern === "/preview"));
   return response;
 });
 

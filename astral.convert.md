@@ -145,3 +145,5 @@ from the Astral delivery API through `src/lib/cms.ts`; field shapes follow
 The Content-Security-Policy (`src/lib/csp.ts`) allows no inline JavaScript: no
 `is:inline` scripts, no `onclick`, no third-party origins unless added there.
 Styles may be inline.
+
+Converted sites keep the live edit wiring of the preview: `src/pages/preview.astro` loads the CMS agent and `src/lib/csp.ts` opens only that route to the CMS.

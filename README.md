@@ -214,6 +214,21 @@ estar no build e no container.
 - Vídeos do YouTube ou Vimeo (`frame-src`), `<video>` do CMS (`media-src`) e serviços de
   terceiros (analytics, mapas) precisam da origem acrescentada em `src/lib/csp.ts`.
 
+### Editar no site
+
+O "Editar no site" do CMS abre o rascunho num frame do admin, e um agente dentro da página
+acha os campos pelo valor: os templates não precisam de marcação nem de atributos. Só a
+pré-visualização muda, as páginas publicadas continuam com a política acima:
+
+- O documento carrega `<script src="<origem do ASTRAL_URL>/live-edit.js" defer></script>`.
+  Fora do frame do admin esse script não faz nada. Ele só atende a própria origem, então
+  `ASTRAL_URL` precisa ser o endereço em que o admin abre.
+- A política ganha a origem do CMS em `script-src` e vira `frame-ancestors 'self' <origem do CMS>`.
+  O resto é igual (`src/lib/csp.ts`).
+- O toolkit não envia `X-Frame-Options`. Um proxy na frente não pode enviar esse cabeçalho, nem
+  somar outra `Content-Security-Policy`, nessas respostas: as políticas se somam e a mais fechada vence.
+- Hospedagem estática: sem servidor não há `/preview`, logo não há editar no site. O `_headers` continua só com a política publicada; para editar no site o projeto precisa do container Node.
+
 ## Idiomas
 
 O projeto define os idiomas e o formato das URLs (Configurações › Idiomas). O cliente
