@@ -6,7 +6,7 @@
 
 import config from "astral:config";
 import { fillPattern, listingUrl, pathOf, type Entry, type ListMeta, type Term } from "./astral/index.ts";
-import { getEntry, getSingle, getTerm, getTerms, listAll, listPosts, PAGE_SIZE, type Post } from "./cms.ts";
+import { getEntry, getSingle, getTerm, getTerms, listAll, listPosts, listProducts, PAGE_SIZE, PRODUCT_TYPE, type Post, type Product } from "./cms.ts";
 import { t } from "./i18n.ts";
 import { pagedUrl, routeOf, type SiteRoute } from "./routes.ts";
 
@@ -52,6 +52,8 @@ export type ListingProps = {
   title: string;
   description?: string | null;
   posts: Post[];
+  /** A store's listing: products instead of posts. */
+  products?: Product[];
   meta: ListMeta;
   base: string;
   allUrl: string;
@@ -60,10 +62,20 @@ export type ListingProps = {
   alternates: { locale: string; url: string | null }[];
 };
 
+/** One page of a listing, as the template takes it: posts, or the products of a store. */
+async function listingOf(type: string, locale: string, page: number, term?: string, pageSize = PAGE_SIZE) {
+  if (type !== PRODUCT_TYPE) {
+    const { data: posts, meta } = await listPosts(locale, page, term, pageSize);
+    return { posts, meta };
+  }
+  const { data: products, meta } = await listProducts(locale, page, term, pageSize);
+  return { posts: [], products, meta };
+}
+
 export async function listingPaths(pattern: string) {
   const r = route(pattern);
   if (!r.paged) return [{ params: {} }];
-  const { meta } = await listPosts(r.locale, 1);
+  const { meta } = await listingOf(r.type, r.locale, 1);
   return Array.from({ length: Math.max(meta.pageCount - 1, 0) }, (_, i) => ({ params: { page: String(i + 2) } }));
 }
 
@@ -73,10 +85,11 @@ export async function resolveListing(pattern: string, params: Params): Promise<O
   const base = listingUrl(type.urlPattern, r.locale, config.format);
   const page = r.paged ? Number(params.page) : 1;
   if (r.paged && (!Number.isInteger(page) || page < 2)) return { kind: "redirect", to: base };
-  const [{ data: posts, meta }, terms] = await Promise.all([listPosts(r.locale, page, undefined, PAGE_SIZE), getTerms(taxonomyOf(r.type), r.locale)]);
+  const [list, terms] = await Promise.all([listingOf(r.type, r.locale, page), getTerms(taxonomyOf(r.type), r.locale)]);
+  const { meta } = list;
   if (page > Math.max(meta.pageCount, 1)) return { kind: "notFound" };
   const alternates = config.format.locales.map((locale) => ({ locale, url: pagedUrl(listingUrl(type.urlPattern, locale, config.format), page, locale) }));
-  return { kind: "ok", props: { locale: r.locale, title: t(r.locale).blog, posts, meta, base, allUrl: base, terms, current: null, alternates } };
+  return { kind: "ok", props: { ...list, locale: r.locale, title: r.type === PRODUCT_TYPE ? type.name : t(r.locale).blog, base, allUrl: base, terms, current: null, alternates } };
 }
 
 // ── Term archives ───────────────────────────────────────────────────────
@@ -87,7 +100,7 @@ export async function termPaths(pattern: string) {
   if (!r.paged) return terms.map((term) => ({ params: { slug: term.slug } }));
   const paths: { params: { slug: string; page: string } }[] = [];
   for (const term of terms) {
-    const { meta } = await listPosts(r.locale, 1, term.id);
+    const { meta } = await listingOf(r.type, r.locale, 1, term.id);
     for (let page = 2; page <= meta.pageCount; page++) paths.push({ params: { slug: term.slug, page: String(page) } });
   }
   return paths;
@@ -105,9 +118,10 @@ export async function resolveTerm(pattern: string, params: Params, locals: App.L
   if (r.paged && (!Number.isInteger(page) || page < 2)) return { kind: "redirect", to: base };
   // The term's own slug is the canonical one in this locale: a slug of another locale redirects.
   if (term.slug !== slug) return { kind: "redirect", to: pagedUrl(base, page, r.locale) };
-  const [{ data: posts, meta }, terms] = await Promise.all([listPosts(r.locale, page, term.id, PAGE_SIZE), getTerms(r.taxonomy!, r.locale)]);
+  const [list, terms] = await Promise.all([listingOf(r.type, r.locale, page, term.id), getTerms(r.taxonomy!, r.locale)]);
+  const { meta } = list;
   if (page > Math.max(meta.pageCount, 1)) return { kind: "notFound" };
   locals.tags.push(`taxonomy:${r.taxonomy}`);
   const alternates = term.meta.alternates.map((a) => ({ locale: a.locale, url: a.url ? pagedUrl(a.url, page, a.locale) : null }));
-  return { kind: "ok", props: { locale: r.locale, title: term.name, description: term.description, posts, meta, base, allUrl, terms, current: term, alternates } };
+  return { kind: "ok", props: { ...list, locale: r.locale, title: term.name, description: term.description, base, allUrl, terms, current: term, alternates } };
 }

@@ -6,10 +6,10 @@ import Blocks from "../blocks/Blocks.astro";
 import Home from "./Home.astro";
 import Page from "./Page.astro";
 import Post from "./Post.astro";
-import Product, { type Product as ProductEntry } from "./Product.astro";
+import Product from "./Product.astro";
 import config from "astral:config";
 import { hasRichText, type Block, type Entry } from "../lib/astral/index.ts";
-import type { Home as HomeEntry, Page as PageEntry, Post as PostEntry } from "../lib/cms.ts";
+import type { Home as HomeEntry, Page as PageEntry, Post as PostEntry, Product as ProductEntry } from "../lib/cms.ts";
 
 type Props = { entry: Entry; locale: string; preview?: boolean };
 const { entry, locale, preview = false } = Astro.props;

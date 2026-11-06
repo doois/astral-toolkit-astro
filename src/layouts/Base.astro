@@ -27,11 +27,13 @@ type Props = {
   /** schema.org items added to the site's graph (Organization, WebSite). */
   jsonLd?: Record<string, unknown>[];
   ogType?: "website" | "article";
+  /** The cart page has its cart in the content, so no drawer. */
+  cartPage?: boolean;
   /** The header's current item: the path the menu should mark (default: the current path). */
   currentPath?: string;
 };
 
-const { locale, title, description, image, canonical, alternates = [], noindex = false, jsonLd = [], ogType = "website", currentPath } = Astro.props;
+const { locale, title, description, image, canonical, alternates = [], noindex = false, jsonLd = [], ogType = "website", cartPage = false, currentPath } = Astro.props;
 const ui = t(locale);
 const [settings, siteGraph] = await Promise.all([getSettings(locale), getSiteJsonLd()]);
 const siteName = settings.siteName || env.project;
@@ -91,6 +93,6 @@ const homeOf = (l: string) => fillPattern("/", { slug: "", locale: l }, config.f
       <slot />
     </main>
     <Footer locale={locale} settings={settings} homeOf={homeOf} />
-    {env.shopifyStore && <Cart locale={locale} />}
+    {env.shopifyStore && !cartPage && <Cart locale={locale} />}
   </body>
 </html>

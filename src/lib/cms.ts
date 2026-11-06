@@ -12,11 +12,15 @@ export type Link = { label: string; url: string; newTab: boolean | null };
 export type Settings = Entry<{ siteName: string; logo: Media | null; description: string | null; social: Link[] | null; footerText: string | null; contactEmail: string | null }>;
 export type Author = Entry<{ name: string; photo: Media | null; bio: string | null }>;
 export type Post = Entry<{ title: string; excerpt: string | null; cover: Media | null; body: string | null; date: string | null; author: Author | null; category: Term[] | null }>;
+export type Variant = { externalId: string; title: string; price: number; compareAtPrice: number | null; available: boolean };
+export type Product = Entry<{ name: string; price: number | null; salePrice: number | null; currency: string | null; available: boolean | null; images: Media[] | null; description: string | null; shortDescription: string | null; variants: Variant[] | null }>;
 export type Page = Entry<{ title: string; blocks: Block[] | null }>;
 export type Home = Entry<{ blocks: Block[] | null }>;
 
 export const POST_TYPE = "post";
 export const CATEGORY = "category";
+export const PRODUCT_TYPE = "product";
+export const PRODUCT_CATEGORY = "productCategory";
 export const PAGE_SIZE = 9;
 
 /** Settings, or a bare set with the project slug as name while the single is not published. */
@@ -45,6 +49,12 @@ export const listAll = <T extends Record<string, unknown>>(type: string, locale:
 export const listPosts = (locale: string, page = 1, category?: string, pageSize = PAGE_SIZE) =>
   memo(`posts:${locale}:${category ?? ""}:${page}:${pageSize}`, [`type:${POST_TYPE}`], () =>
     cms.list<Post>(POST_TYPE, { locale, page, pageSize, sort: "date:desc", populate: 1, ...(category ? { filter: { [CATEGORY]: category } } : {}) }).catch(fallback<ListResult<Post>>({ data: [], meta: { page: 1, pageSize, offset: 0, total: 0, pageCount: 0 } })),
+  );
+
+/** One page of products, optionally inside a collection (slug in any locale or id). */
+export const listProducts = (locale: string, page = 1, category?: string, pageSize = PAGE_SIZE) =>
+  memo(`products:${locale}:${category ?? ""}:${page}:${pageSize}`, [`type:${PRODUCT_TYPE}`], () =>
+    cms.list<Product>(PRODUCT_TYPE, { locale, page, pageSize, populate: 1, ...(category ? { filter: { [PRODUCT_CATEGORY]: category } } : {}) }).catch(fallback<ListResult<Product>>({ data: [], meta: { page: 1, pageSize, offset: 0, total: 0, pageCount: 0 } })),
   );
 
 /** A 404 from the API becomes the fallback; anything else (a bad key, the CMS down) still fails the build or the request. */

@@ -4,12 +4,10 @@
 // a store configured the page stays a catalog, with no buy box.
 import Base from "../layouts/Base.astro";
 import Image from "../components/Image.astro";
-import { hasRichText, type Entry, type Media } from "../lib/astral/index.ts";
+import { hasRichText } from "../lib/astral/index.ts";
+import type { Product } from "../lib/cms.ts";
 import { env } from "../lib/env.ts";
 import { t } from "../lib/i18n.ts";
-
-type Variant = { variantId: string; title: string; price: number; compareAtPrice: number | null; available: boolean };
-export type Product = Entry & { name: string; price: number | null; salePrice: number | null; currency: string | null; available: boolean | null; images: Media[] | null; description: string | null; shortDescription: string | null; variants: Variant[] | null };
 
 type Props = { entry: Product; locale: string; preview?: boolean };
 const { entry, locale, preview = false } = Astro.props;
@@ -54,14 +52,14 @@ const jsonLd = entry.meta.jsonLd ?? {
               {ui.productVariant}
               <select data-variant>
                 {variants.map((variant) => (
-                  <option value={variant.variantId} data-amount={money(variant.price)} data-compare-amount={variant.compareAtPrice !== null && variant.compareAtPrice > variant.price ? money(variant.compareAtPrice) : ""} data-available={String(variant.available)}>
+                  <option value={variant.externalId} data-amount={money(variant.price)} data-compare-amount={variant.compareAtPrice !== null && variant.compareAtPrice > variant.price ? money(variant.compareAtPrice) : ""} data-available={String(variant.available)}>
                     {variant.available ? variant.title : `${variant.title} (${ui.productSoldOut})`}
                   </option>
                 ))}
               </select>
             </label>
           )}
-          <button class="button button--accent" type="button" data-add-to-cart={first.variantId} disabled={!first.available}>
+          <button class="button button--accent" type="button" data-add-to-cart={first.externalId} disabled={!first.available}>
             {entry.available ? ui.productAdd : ui.productSoldOut}
           </button>
         </div>

@@ -1,0 +1,28 @@
+---
+// A product in a listing. The price is the last one the store told the CMS.
+import Image from "./Image.astro";
+import type { Product } from "../lib/cms.ts";
+import { t } from "../lib/i18n.ts";
+
+type Props = { product: Product; locale: string };
+const { product, locale } = Astro.props;
+const ui = t(locale);
+const image = product.images?.[0] ?? null;
+const current = product.salePrice ?? product.price;
+const money = (value: number) => new Intl.NumberFormat(locale, { style: "currency", currency: product.currency ?? "BRL" }).format(value);
+---
+
+<article class="product-card">
+  <a class="product-card__media" href={product.meta.url ?? "#"} tabindex="-1" aria-hidden="true">
+    {image && <Image media={image} sizes="(min-width: 64em) 24rem, (min-width: 40em) 50vw, 100vw" alt="" />}
+  </a>
+  <h2 class="product-card__title">
+    <a href={product.meta.url ?? "#"}>{product.name}</a>
+  </h2>
+  {current !== null && (
+    <p class="product-card__price">
+      {product.salePrice !== null && product.price !== null && <s>{money(product.price)}</s>} <strong>{money(current)}</strong>
+    </p>
+  )}
+  {product.available === false && <p class="product-card__soldout">{ui.productSoldOut}</p>}
+</article>

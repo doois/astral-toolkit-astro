@@ -60,9 +60,9 @@ const locales = config.format.locales.map((l) => ({ locale: l, href: alternates.
         </ul>
       )}
       {env.shopifyStore && (
-        <button class="cart-toggle" type="button" data-cart-open>
+        <a class="cart-toggle" href="/carrinho" data-cart-open>
           {ui.cart} <span data-cart-count></span>
-        </button>
+        </a>
       )}
       {menu.items.length > 0 && (
         <details class="nav__toggle">

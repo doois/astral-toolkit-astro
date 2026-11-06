@@ -3,9 +3,10 @@
 // crawlable and works without JavaScript) and pagination.
 import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
+import ProductCard from "../components/ProductCard.astro";
 import Pagination from "../components/Pagination.astro";
 import type { ListMeta, Term } from "../lib/astral/index.ts";
-import type { Post } from "../lib/cms.ts";
+import type { Post, Product } from "../lib/cms.ts";
 import { t } from "../lib/i18n.ts";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
   title: string;
   description?: string | null;
   posts: Post[];
+  products?: Product[];
   meta: ListMeta;
   /** The listing's page-1 URL (pagination builds on it). */
   base: string;
@@ -22,7 +24,7 @@ type Props = {
   current?: Term | null;
   alternates: { locale: string; url: string | null }[];
 };
-const { locale, title, description, posts, meta, base, allUrl, terms, current = null, alternates } = Astro.props;
+const { locale, title, description, posts, products, meta, base, allUrl, terms, current = null, alternates } = Astro.props;
 const ui = t(locale);
 const canonical = meta.page > 1 ? Astro.url.pathname : base;
 ---
@@ -30,7 +32,7 @@ const canonical = meta.page > 1 ? Astro.url.pathname : base;
 <Base locale={locale} title={meta.page > 1 ? `${title} (${ui.page(meta.page, meta.pageCount)})` : title} description={description} alternates={alternates} canonical={canonical} currentPath={allUrl}>
   <div class="container">
     <header class="page-header">
-      <p class="eyebrow">{ui.blog}</p>
+      {!products && <p class="eyebrow">{ui.blog}</p>}
       <h1>{title}</h1>
       {description && <p class="lede">{description}</p>}
     </header>
@@ -45,7 +47,15 @@ const canonical = meta.page > 1 ? Astro.url.pathname : base;
         ))}
       </nav>
     )}
-    {posts.length ? (
+    {products?.length ? (
+      <ul class="post-grid">
+        {products.map((product) => (
+          <li>
+            <ProductCard product={product} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    ) : posts.length ? (
       <ul class="post-grid">
         {posts.map((post) => (
           <li>

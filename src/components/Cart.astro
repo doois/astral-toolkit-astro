@@ -1,19 +1,20 @@
 ---
-// The cart: a dialog on every page of a store (SHOPIFY_STORE_DOMAIN set). It
-// holds no prices of its own; everything it shows comes from Shopify, and paying
+// The cart: a drawer on every page of a store (SHOPIFY_STORE_DOMAIN set), or the
+// content of /carrinho with `page`. It holds no prices of its own; everything it shows comes from Shopify, and paying
 // happens on the store's checkout. The token is the public one, made for browsers.
 import { env } from "../lib/env.ts";
 import { t } from "../lib/i18n.ts";
 
-type Props = { locale: string };
-const { locale } = Astro.props;
+type Props = { locale: string; page?: boolean };
+const { locale, page = false } = Astro.props;
 const ui = t(locale);
+const Tag = page ? "section" : "dialog";
 ---
 
-<dialog class="cart" data-cart data-store={env.shopifyStore} data-token={env.shopifyToken} data-locale={locale} data-remove={ui.cartRemove} data-not-applied={ui.cartCodeNotApplied} data-error={ui.cartError} aria-label={ui.cart}>
+<Tag class:list={["cart", { "cart--page": page }]} data-cart data-store={env.shopifyStore} data-token={env.shopifyToken} data-locale={locale} data-remove={ui.cartRemove} data-not-applied={ui.cartCodeNotApplied} data-error={ui.cartError} aria-label={ui.cart}>
   <header class="cart__head">
     <h2>{ui.cart}</h2>
-    <button class="cart__close" type="button" data-cart-close aria-label={ui.cartClose}>×</button>
+    {!page && <button class="cart__close" type="button" data-cart-close aria-label={ui.cartClose}>×</button>}
   </header>
   <p class="cart__empty" data-cart-empty>{ui.cartEmpty}</p>
   <ul class="cart__lines" data-cart-lines></ul>
@@ -27,12 +28,13 @@ const ui = t(locale);
     <p class="cart__total"><span>{ui.cartTotal}</span> <strong data-cart-total></strong></p>
     <a class="button button--accent" data-cart-checkout href="#">{ui.cartCheckout}</a>
   </footer>
-</dialog>
+</Tag>
 
 <script>
   import { createCart, type Cart, type Money } from "../lib/cart.ts";
 
-  const dialog = document.querySelector<HTMLDialogElement>("[data-cart]")!;
+  const dialog = document.querySelector<HTMLElement>("[data-cart]")!;
+  const drawer = dialog instanceof HTMLDialogElement ? dialog : null;
   const { store, token, locale, remove, notApplied, error: failure } = dialog.dataset as { store: string; token: string; locale: string; remove: string; notApplied: string; error: string };
   const cart = createCart({ store, token, storage: () => window.localStorage });
   const part = <T extends HTMLElement>(name: string) => dialog.querySelector<T>(`[data-cart-${name}]`)!;
@@ -119,13 +121,16 @@ const ui = t(locale);
 
   document.addEventListener("click", (event) => {
     const target = event.target as Element;
-    if (target.closest("[data-cart-open]")) dialog.showModal();
-    if (target.closest("[data-cart-close]") || target === dialog) dialog.close();
+    if (drawer && target.closest("[data-cart-open]")) {
+      event.preventDefault();
+      drawer.showModal();
+    }
+    if (target.closest("[data-cart-close]") || target === drawer) drawer?.close();
     const buy = target.closest<HTMLButtonElement>("[data-add-to-cart]");
     if (!buy) return;
     const box = buy.closest("[data-buy]")!;
     const variant = box.querySelector<HTMLSelectElement>("[data-variant]")?.value ?? buy.dataset.addToCart!;
-    dialog.showModal();
+    drawer?.showModal();
     void run(() => cart.add(variant));
   });
 
