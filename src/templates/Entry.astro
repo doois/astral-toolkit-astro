@@ -6,6 +6,7 @@ import Blocks from "../blocks/Blocks.astro";
 import Home from "./Home.astro";
 import Page from "./Page.astro";
 import Post from "./Post.astro";
+import Product, { type Product as ProductEntry } from "./Product.astro";
 import config from "astral:config";
 import { hasRichText, type Block, type Entry } from "../lib/astral/index.ts";
 import type { Home as HomeEntry, Page as PageEntry, Post as PostEntry } from "../lib/cms.ts";
@@ -30,6 +31,10 @@ const sections = (type?.fields ?? []).filter((f) => f.type === "richtext" || f.t
   <Post entry={entry as PostEntry} locale={locale} preview={preview}>
     <slot name="banner" slot="banner" />
   </Post>
+) : entry.type === "product" ? (
+  <Product entry={entry as ProductEntry} locale={locale} preview={preview}>
+    <slot name="banner" slot="banner" />
+  </Product>
 ) : (
   <Base locale={locale} title={entry.seo?.title ?? title} description={entry.seo?.description} image={entry.seo?.image} alternates={entry.meta.alternates} noindex={preview || entry.seo?.noindex}>
     <slot name="banner" slot="banner" />

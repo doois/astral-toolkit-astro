@@ -37,6 +37,7 @@ Copie `.env.example` para `.env` e preencha (nunca versione o `.env`):
 | `ASTRAL_TOKEN` | Chave de leitura (`cms_xxxxxxxx_...`), com `entries:*:read`, `entries:*:preview` e `media.read` |
 | `ASTRAL_WEBHOOK_SECRET` | Segredo do webhook do projeto que aponta para `<site>/api/astral/revalidate` |
 | `ASTRAL_BUILD_WEBHOOK_ID` | Opcional: id desse webhook, para o build reportar o status ao CMS |
+| `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_STOREFRONT_TOKEN` | Opcional: loja Shopify; veja "Loja" |
 | `ASTRAL_MEDIA_URL` | Opcional: host de mídia do CMS (o `MEDIA_URL` dele, como `https://cms-media.doois.com.br`), para a Content-Security-Policy; veja "Segurança" |
 | `SITE_URL` | Endereço público do site |
 | `ASTRAL_REBUILD_HOOK` | Opcional: URL chamada (POST) quando o site precisa ser reconstruído |
@@ -293,3 +294,9 @@ segredos só aparecem na criação: o script nunca os imprime.
 `AstralAuthError`, `AstralHttpError`, `AstralNetworkError`) e nova tentativa em erros de
 rede e 5xx. Ajudantes: `renderMode`, `pathOf`, `localeFormat`, `routePattern`,
 `localeOfPath`, `imageAttrs`, `verifyWebhook`, `signBody`, `tagsOf`, `pathsOf`.
+
+## Loja
+
+Com o app Shopify ligado no CMS, os produtos e as coleções chegam ao tipo `product` e à taxonomia `productCategory`, e o `templates/Product.astro` monta a página. Com `SHOPIFY_STORE_DOMAIN` e `SHOPIFY_STOREFRONT_TOKEN` (o token público do canal Headless) o site vende: botão de comprar, carrinho (`components/Cart.astro`) e a loja no `connect-src` da Content-Security-Policy.
+
+O carrinho vive no Shopify: `lib/cart.ts` fala com a Storefront API direto do navegador e o site guarda só o id. Cupons e descontos automáticos são calculados pela loja, e o pagamento acontece no checkout dela. O preço da página é o último que a loja avisou ao CMS; o do carrinho é sempre o real.

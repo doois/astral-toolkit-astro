@@ -1,0 +1,72 @@
+---
+// A product synced from Shopify: gallery, price, the buy box. The price here is
+// the last one the store told the CMS; the cart always has the real one. Without
+// a store configured the page stays a catalog, with no buy box.
+import Base from "../layouts/Base.astro";
+import Image from "../components/Image.astro";
+import { hasRichText, type Entry, type Media } from "../lib/astral/index.ts";
+import { env } from "../lib/env.ts";
+import { t } from "../lib/i18n.ts";
+
+type Variant = { variantId: string; title: string; price: number; compareAtPrice: number | null; available: boolean };
+export type Product = Entry & { name: string; price: number | null; salePrice: number | null; currency: string | null; available: boolean | null; images: Media[] | null; description: string | null; shortDescription: string | null; variants: Variant[] | null };
+
+type Props = { entry: Product; locale: string; preview?: boolean };
+const { entry, locale, preview = false } = Astro.props;
+const ui = t(locale);
+const images = entry.images ?? [];
+const variants = entry.variants ?? [];
+const first = variants[0];
+const current = entry.salePrice ?? entry.price;
+const currency = entry.currency ?? "BRL";
+const money = (value: number) => new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
+const absolute = (path: string | null | undefined) => (path ? new URL(path, env.siteUrl).href : undefined);
+
+const jsonLd = entry.meta.jsonLd ?? {
+  "@type": "Product",
+  name: entry.name,
+  ...(entry.shortDescription ? { description: entry.shortDescription } : {}),
+  ...(images[0] ? { image: images[0].url } : {}),
+  ...(current !== null
+    ? { offers: { "@type": "Offer", price: current, priceCurrency: currency, availability: `https://schema.org/${entry.available ? "InStock" : "OutOfStock"}`, url: absolute(entry.meta.url) } }
+    : {}),
+};
+---
+
+<Base locale={locale} title={entry.seo?.title ?? entry.name} description={entry.seo?.description ?? entry.shortDescription} image={images[0] ?? entry.seo?.image} canonical={entry.seo?.canonical} alternates={entry.meta.alternates} noindex={preview || entry.seo?.noindex} jsonLd={[jsonLd]}>
+  <slot name="banner" slot="banner" />
+  <article class="container product">
+    <div class="product__gallery">
+      {images.map((image, index) => <Image media={image} sizes="(min-width: 60rem) 50vw, 100vw" priority={index === 0} />)}
+    </div>
+    <div class="product__info" data-buy>
+      <h1>{entry.name}</h1>
+      {entry.shortDescription && <p class="lede">{entry.shortDescription}</p>}
+      {current !== null && (
+        <p class="product__price">
+          <s data-compare hidden={entry.salePrice === null || entry.price === null}>{entry.price !== null && money(entry.price)}</s> <strong data-price>{money(current)}</strong>
+        </p>
+      )}
+      {env.shopifyStore && first && (
+        <div class="product__buy">
+          {variants.length > 1 && (
+            <label>
+              {ui.productVariant}
+              <select data-variant>
+                {variants.map((variant) => (
+                  <option value={variant.variantId} data-amount={money(variant.price)} data-compare-amount={variant.compareAtPrice !== null && variant.compareAtPrice > variant.price ? money(variant.compareAtPrice) : ""} data-available={String(variant.available)}>
+                    {variant.available ? variant.title : `${variant.title} (${ui.productSoldOut})`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button class="button button--accent" type="button" data-add-to-cart={first.variantId} disabled={!first.available}>
+            {entry.available ? ui.productAdd : ui.productSoldOut}
+          </button>
+        </div>
+      )}
+      {hasRichText(entry.description) && <div class="prose" set:html={entry.description} />}
+    </div>
+  </article>
+</Base>

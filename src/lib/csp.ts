@@ -34,13 +34,14 @@ export const liveEditAgent = () => `${originOf(env.url)}/live-edit.js`;
 export function contentSecurityPolicy(preview = false) {
   const cms = originOf(env.url);
   const media = originOf(env.mediaUrl);
+  const store = env.shopifyStore ? originOf(`https://${env.shopifyStore}`) : "";
   return [
     "default-src 'self'",
     directive("script-src", ["'self'", preview ? cms : ""]),
     "style-src 'self' 'unsafe-inline'",
     directive("img-src", ["'self'", "data:", cms, media || "https:"]),
     "font-src 'self'",
-    directive("connect-src", ["'self'", cms]),
+    directive("connect-src", ["'self'", cms, store]),
     "form-action 'self'",
     directive("frame-ancestors", ["'self'", preview ? cms : ""]),
     "base-uri 'self'",

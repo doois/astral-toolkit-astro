@@ -1,0 +1,156 @@
+---
+// The cart: a dialog on every page of a store (SHOPIFY_STORE_DOMAIN set). It
+// holds no prices of its own; everything it shows comes from Shopify, and paying
+// happens on the store's checkout. The token is the public one, made for browsers.
+import { env } from "../lib/env.ts";
+import { t } from "../lib/i18n.ts";
+
+type Props = { locale: string };
+const { locale } = Astro.props;
+const ui = t(locale);
+---
+
+<dialog class="cart" data-cart data-store={env.shopifyStore} data-token={env.shopifyToken} data-locale={locale} data-remove={ui.cartRemove} data-not-applied={ui.cartCodeNotApplied} data-error={ui.cartError} aria-label={ui.cart}>
+  <header class="cart__head">
+    <h2>{ui.cart}</h2>
+    <button class="cart__close" type="button" data-cart-close aria-label={ui.cartClose}>×</button>
+  </header>
+  <p class="cart__empty" data-cart-empty>{ui.cartEmpty}</p>
+  <ul class="cart__lines" data-cart-lines></ul>
+  <p class="cart__error" data-cart-message role="alert" hidden></p>
+  <footer class="cart__foot" data-cart-foot hidden>
+    <form class="cart__code" data-cart-code>
+      <input type="text" name="code" autocomplete="off" aria-label={ui.cartCode} placeholder={ui.cartCode} />
+      <button class="button button--secondary" type="submit">{ui.cartApply}</button>
+    </form>
+    <ul class="cart__codes" data-cart-codes></ul>
+    <p class="cart__total"><span>{ui.cartTotal}</span> <strong data-cart-total></strong></p>
+    <a class="button button--accent" data-cart-checkout href="#">{ui.cartCheckout}</a>
+  </footer>
+</dialog>
+
+<script>
+  import { createCart, type Cart, type Money } from "../lib/cart.ts";
+
+  const dialog = document.querySelector<HTMLDialogElement>("[data-cart]")!;
+  const { store, token, locale, remove, notApplied, error: failure } = dialog.dataset as { store: string; token: string; locale: string; remove: string; notApplied: string; error: string };
+  const cart = createCart({ store, token, storage: () => window.localStorage });
+  const part = <T extends HTMLElement>(name: string) => dialog.querySelector<T>(`[data-cart-${name}]`)!;
+  const money = ({ amount, currencyCode }: Money) => new Intl.NumberFormat(locale, { style: "currency", currency: currencyCode }).format(Number(amount));
+  const element = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = "") => {
+    const node = document.createElement(tag);
+    node.className = className;
+    node.textContent = text; // store text never becomes markup
+    return node;
+  };
+
+  let current: Cart | null = null;
+
+  function line(item: Cart["lines"]["nodes"][number]) {
+    const row = element("li", "cart__line");
+    const { merchandise: variant, cost } = item;
+    if (variant.image) {
+      const image = element("img", "cart__image");
+      image.src = variant.image.url;
+      image.alt = variant.image.altText ?? "";
+      image.width = 64;
+      image.height = 64;
+      image.loading = "lazy";
+      row.append(image);
+    }
+    const about = element("div", "cart__about");
+    about.append(element("strong", "", variant.product.title));
+    if (variant.title !== "Default Title") about.append(element("span", "cart__variant", variant.title));
+    const quantity = element("input", "cart__quantity");
+    quantity.type = "number";
+    quantity.min = "0";
+    quantity.value = String(item.quantity);
+    quantity.setAttribute("aria-label", variant.product.title);
+    quantity.addEventListener("change", () => void run(() => cart.setQuantity(item.id, Math.max(0, Math.floor(Number(quantity.value) || 0)))));
+    const drop = element("button", "cart__remove", remove);
+    drop.type = "button";
+    drop.addEventListener("click", () => void run(() => cart.setQuantity(item.id, 0)));
+    about.append(quantity, drop);
+    const price = element("div", "cart__price");
+    // A discount shows as the old amount struck through, the store's own numbers.
+    if (cost.subtotalAmount.amount !== cost.totalAmount.amount) price.append(element("s", "", money(cost.subtotalAmount)));
+    price.append(element("span", "", money(cost.totalAmount)));
+    row.append(about, price);
+    return row;
+  }
+
+  function render(next: Cart | null) {
+    current = next;
+    const lines = next?.lines.nodes ?? [];
+    part("lines").replaceChildren(...lines.map(line));
+    part("empty").hidden = lines.length > 0;
+    part("foot").hidden = lines.length === 0;
+    if (next) {
+      part("total").textContent = money(next.cost.totalAmount);
+      part<HTMLAnchorElement>("checkout").href = next.checkoutUrl;
+      part("codes").replaceChildren(
+        ...next.discountCodes.map((discount) => {
+          const item = element("li", discount.applicable ? "cart__discount" : "cart__discount cart__discount--off", discount.applicable ? discount.code : `${discount.code}: ${notApplied}`);
+          const clear = element("button", "cart__remove", remove);
+          clear.type = "button";
+          clear.addEventListener("click", () => void run(() => cart.setCodes(next.discountCodes.filter((c) => c !== discount).map((c) => c.code))));
+          item.append(" ", clear);
+          return item;
+        }),
+      );
+    }
+    for (const count of document.querySelectorAll<HTMLElement>("[data-cart-count]")) count.textContent = next?.totalQuantity ? String(next.totalQuantity) : "";
+  }
+
+  /** Every change goes through here: the store answers with the whole cart, or a reason to show. */
+  async function run(task: () => Promise<Cart | null>) {
+    const message = part("message");
+    message.hidden = true;
+    dialog.setAttribute("aria-busy", "true");
+    try {
+      render(await task());
+    } catch (error) {
+      message.textContent = error instanceof Error && error.message && !error.message.startsWith("Shopify") ? error.message : failure;
+      message.hidden = false;
+    } finally {
+      dialog.removeAttribute("aria-busy");
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target as Element;
+    if (target.closest("[data-cart-open]")) dialog.showModal();
+    if (target.closest("[data-cart-close]") || target === dialog) dialog.close();
+    const buy = target.closest<HTMLButtonElement>("[data-add-to-cart]");
+    if (!buy) return;
+    const box = buy.closest("[data-buy]")!;
+    const variant = box.querySelector<HTMLSelectElement>("[data-variant]")?.value ?? buy.dataset.addToCart!;
+    dialog.showModal();
+    void run(() => cart.add(variant));
+  });
+
+  // Choosing a variant shows its price and whether it can be bought.
+  document.addEventListener("change", (event) => {
+    const select = (event.target as Element).closest<HTMLSelectElement>("[data-variant]");
+    if (!select) return;
+    const box = select.closest<HTMLElement>("[data-buy]")!;
+    const option = select.selectedOptions[0]!;
+    const compare = box.querySelector<HTMLElement>("[data-compare]")!;
+    box.querySelector("[data-price]")!.textContent = option.dataset.amount!;
+    compare.textContent = option.dataset.compareAmount!;
+    compare.hidden = !option.dataset.compareAmount;
+    box.querySelector<HTMLButtonElement>("[data-add-to-cart]")!.disabled = option.dataset.available !== "true";
+  });
+
+  part<HTMLFormElement>("code").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = event.currentTarget as HTMLFormElement;
+    const input = form.elements.namedItem("code") as HTMLInputElement;
+    const code = input.value.trim();
+    if (!code || !current) return;
+    input.value = "";
+    void run(() => cart.setCodes([...current!.discountCodes.map((c) => c.code), code]));
+  });
+
+  void run(() => cart.load());
+</script>

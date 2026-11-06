@@ -7,6 +7,7 @@ import "../styles/index.css";
 import config from "astral:config";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import Cart from "../components/Cart.astro";
 import { getSettings, getSiteJsonLd } from "../lib/cms.ts";
 import { env } from "../lib/env.ts";
 import { fillPattern, type Media } from "../lib/astral/index.ts";
@@ -90,5 +91,6 @@ const homeOf = (l: string) => fillPattern("/", { slug: "", locale: l }, config.f
       <slot />
     </main>
     <Footer locale={locale} settings={settings} homeOf={homeOf} />
+    {env.shopifyStore && <Cart locale={locale} />}
   </body>
 </html>

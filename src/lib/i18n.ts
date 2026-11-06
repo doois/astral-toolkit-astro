@@ -27,9 +27,35 @@ export type Strings = {
   noPosts: string;
   loading: string;
   relatedByCategory: string;
+  cart: string;
+  cartClose: string;
+  cartEmpty: string;
+  cartRemove: string;
+  cartCode: string;
+  cartApply: string;
+  cartCodeNotApplied: string;
+  cartTotal: string;
+  cartCheckout: string;
+  cartError: string;
+  productVariant: string;
+  productAdd: string;
+  productSoldOut: string;
 };
 
 const en: Strings = {
+  cart: "Cart",
+  cartClose: "Close cart",
+  cartEmpty: "Your cart is empty.",
+  cartRemove: "Remove",
+  cartCode: "Discount code",
+  cartApply: "Apply",
+  cartCodeNotApplied: "does not apply to this cart",
+  cartTotal: "Total",
+  cartCheckout: "Check out",
+  cartError: "We could not update the cart. Try again.",
+  productVariant: "Option",
+  productAdd: "Add to cart",
+  productSoldOut: "Sold out",
   pageSegment: "page",
   skipToContent: "Skip to content",
   menu: "Menu",
@@ -56,6 +82,19 @@ const en: Strings = {
 };
 
 const ptBR: Strings = {
+  cart: "Carrinho",
+  cartClose: "Fechar o carrinho",
+  cartEmpty: "Seu carrinho está vazio.",
+  cartRemove: "Remover",
+  cartCode: "Cupom de desconto",
+  cartApply: "Aplicar",
+  cartCodeNotApplied: "não vale para este carrinho",
+  cartTotal: "Total",
+  cartCheckout: "Finalizar compra",
+  cartError: "Não foi possível atualizar o carrinho. Tente de novo.",
+  productVariant: "Opção",
+  productAdd: "Adicionar ao carrinho",
+  productSoldOut: "Esgotado",
   pageSegment: "pagina",
   skipToContent: "Ir para o conteúdo",
   menu: "Menu",

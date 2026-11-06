@@ -34,6 +34,14 @@ export const env = {
   get rebuildHook() {
     return read("ASTRAL_REBUILD_HOOK");
   },
+  /** The store's address (loja.myshopify.com). Set, the site sells: buy box, cart and the store in the Content-Security-Policy. */
+  get shopifyStore() {
+    return read("SHOPIFY_STORE_DOMAIN").toLowerCase();
+  },
+  /** The Storefront API public token, made to be seen by browsers. Never the private one. */
+  get shopifyToken() {
+    return read("SHOPIFY_STOREFRONT_TOKEN");
+  },
   get localeUrls() {
     return read("ASTRAL_LOCALE_URLS");
   },
