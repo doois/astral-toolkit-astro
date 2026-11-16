@@ -32,8 +32,8 @@ export type ImageAttrs = {
   style?: string;
 };
 
-/** Raster images get a srcset; SVGs and GIFs are served as they are. */
-export const isRaster = (media: Pick<Media, "mime">) => media.mime.startsWith("image/") && media.mime !== "image/svg+xml" && media.mime !== "image/gif";
+/** Raster images get a srcset. SVGs are served as they are, and so is a GIF the CMS has no WebP of (an animation it could not convert). */
+export const isRaster = (media: Pick<Media, "mime"> & Partial<Pick<Media, "optimized">>) => media.mime.startsWith("image/") && media.mime !== "image/svg+xml" && (media.mime !== "image/gif" || !!media.optimized);
 
 /** The CMS URL of one sized WebP variant of an image (`?w=640&f=webp`). */
 export function variantUrl(media: Pick<Media, "url">, width: number) {
